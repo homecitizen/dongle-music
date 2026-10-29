@@ -1,0 +1,24 @@
+# ─── PlatformIO ────────────────────────────────
+.pio/
+.vscode/extensions.json
+
+# ─── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# ─── macOS ─────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ─── Arduino IDE (carpeta legacy, sólo referencia)
+# dongle_music/dongle_music.ino → ya copiado en firmware/src/main.cpp
+
+# ─── Local ─────────────────────────────────────
+.vscode/
+scratch/
+tools/preview.png
