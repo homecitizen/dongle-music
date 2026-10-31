@@ -1,5 +1,5 @@
 # Mini Display & Controlador de Apple Music
-## ESP32-S3 + ST7735 80×160 + macOS
+## ESP32-S3 + ST7735 80×160 (macOS & Windows 10/11)
 
 ---
 
@@ -7,7 +7,10 @@
 
 ```
 dongle_music/
-├── mac_music_bridge.py         ← Script Python para macOS
+├── win_music_bridge.py         ← Script Python para Windows 10 / 11 (SMTC nativo)
+├── iniciar_windows.bat         ← Lanzador rápido para Windows (doble clic)
+├── mac_music_bridge.py         ← Script Python para macOS (AppleScript)
+├── requirements.txt            ← Dependencias de Python para Windows y macOS
 ├── platformio.ini
 ├── firmware/src/
 │   ├── main.cpp                ← Hardware, serie, botón (PlatformIO)
@@ -72,14 +75,40 @@ Adafruit BusIO                       ← dependencia automática
 
 ---
 
-## Instalación del script Python
+## Instalación y ejecución del script Python
 
-```bash
-pip3 install pyserial
-python3 mac_music_bridge.py --help
+### En Windows 10 / 11
+
+1. Instala las dependencias:
+```powershell
+pip install -r requirements.txt
 ```
 
-### Uso básico
+2. Ejecuta el puente con el dongle conectado por USB:
+```powershell
+# Detección automática del puerto COM
+python win_music_bridge.py
+
+# O especificando puerto manualmente
+python win_music_bridge.py --port COM4
+
+# Listar puertos COM disponibles
+python win_music_bridge.py --list
+```
+*(También puedes hacer doble clic en `iniciar_windows.bat`).*
+
+> **Cómo funciona en Windows**: Utiliza las APIs nativas de Windows Runtime (SMTC) para comunicarse directamente con Apple Music para Windows (`AppleMusic.exe`), extrayendo portada a resolución completa, estados de reproducción, tiempos de pista y control del botón físico.
+
+---
+
+### En macOS
+
+1. Instala las dependencias:
+```bash
+pip3 install -r requirements.txt
+```
+
+2. Ejecuta el script:
 ```bash
 # Detección automática del puerto
 python3 mac_music_bridge.py
@@ -102,7 +131,7 @@ python3 mac_music_bridge.py --list-ports
 
 ## Protocolo de comunicación (USB Serial · 921600 baud)
 
-### Mac → ESP32
+### PC / Mac → ESP32
 
 | Mensaje | Descripción |
 |---|---|
@@ -111,11 +140,11 @@ python3 mac_music_bridge.py --list-ports
 | `STATE:<playing\|paused\|stopped>\n` | Estado del reproductor |
 | `VOL:<0-100>\n` | Volumen del sistema (no se dibuja) |
 | `BGM:<r\|g\|b>×9\n` | Malla 3×3 de colores del fondo (TL TC TR / ML C MR / BL BC BR) |
-| `ART:<y>:<base64>\n` | Fila `y` (0-47) de la portada, 48 px RGB565 |
+| `ART:<y>:<base64>\n` | Fila `y` (0-47) de la portada, 48 px RGB565 / BGR |
 | `BG:<r>\|<g>\|<b>\n` | (antiguo) un solo color de fondo, aún aceptado |
-| `PING\n` | Keepalive (cada 5 s) |
+| `PING\n` | Keepalive (cada 4-5 s) |
 
-### ESP32 → Mac
+### ESP32 → PC / Mac
 
 | Mensaje | Descripción |
 |---|---|
@@ -147,9 +176,9 @@ python3 mac_music_bridge.py --list-ports
 - Títulos largos: pausa, scroll suave y desvanecido en los bordes.
 - **Barra de progreso opcional**: compila con `-DSHOW_PROGRESS=1` (o cambia el
   `#define` en `ui_render.h`) para añadir una barra fina en el borde inferior.
-- **Vista previa sin flashear**: `python3 tools/preview.py portada.jpg`
+- **Vista previa sin flashear**: `python tools/preview.py portada.jpg`
 - **Cambiar tipografía/tamaños**: edita `FACES` en `tools/gen_assets.py` y ejecuta
-  `pip3 install pillow numpy freetype-py && python3 tools/gen_assets.py`.
+  `pip install pillow numpy freetype-py && python tools/gen_assets.py`.
 
 ### Comportamiento del botón (GPIO 0)
 
@@ -167,8 +196,7 @@ python3 mac_music_bridge.py --list-ports
 | Pantalla en blanco | Backlight apagado | Verificar `TFT_BL=38` en `HIGH` |
 | Colores invertidos | Falta `invertDisplay(true)` | Comprobar que está en `setup()` |
 | Pantalla rotada | Rotación incorrecta | Probar `setRotation(1)` en vez de `3` |
-| Puerto no detectado | USB CDC no habilitado | Activar *USB CDC On Boot* en Arduino IDE |
+| Puerto no detectado en Windows | Driver o cable solo de carga | Instalar driver CP210x o usar cable con datos |
+| Puerto no detectado en ESP32-S3 | USB CDC no habilitado | Activar *USB CDC On Boot* en Arduino IDE o PlatformIO |
 | Caracteres corruptos | Baudios incorrectos | Confirmar 921600 en ambos lados |
-| AppleScript denegado | Sin permisos de automatización | Sistema > Privacidad > Automatización |
-
----
+| AppleScript denegado (Mac) | Sin permisos de automatización | Sistema > Privacidad > Automatización |
